@@ -77,6 +77,8 @@ Por favor, devuélveme sólo una tabla Markdown con columnas: Criterio, Cumple (
       console.log('DeepSeek prompt:', prompt);
 
       // Llamar a la API de DeepSeek
+      console.log('🔑 DEEPSEEK_API_KEY en Vercel:', process.env.DEEPSEEK_API_KEY);
+
       const apiRes = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
