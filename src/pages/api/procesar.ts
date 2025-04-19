@@ -92,7 +92,7 @@ Por favor, devuélveme sólo una tabla Markdown con columnas: Criterio, Cumple (
           max_tokens: 1000,
         }),
       });
-
+      const apiKey = process.env.deepseek || process.env.DEEPSEEK_API_KEY;
       if (!apiRes.ok) {
         const errText = await apiRes.text();
         throw new Error(errText);
