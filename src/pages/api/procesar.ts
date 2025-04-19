@@ -1,4 +1,3 @@
-// src/pages/api/procesar.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable-serverless';
 const mammoth = require('mammoth');
@@ -52,7 +51,7 @@ export default async function handler(
       }
 
       // Obtener prompt adicional del campo "prompt"
-      const extraPrompt = fields.prompt as string || '';
+      const extraPrompt = (fields.prompt as string) || '';
 
       // Determinar ruta del archivo subido
       const filePath = uploaded.filepath || uploaded.path;
@@ -77,12 +76,17 @@ Por favor, devuélveme sólo una tabla Markdown con columnas: Criterio, Cumple (
       console.log('DeepSeek prompt:', prompt);
 
       // Llamar a la API de DeepSeek
-      console.log('🔑 DEEPSEEK_API_KEY en Vercel:', process.env.DEEPSEEK_API_KEY);
+      const apiKey = process.env.deepseek || process.env.DEEPSEEK_API_KEY;
+      if (!apiKey) {
+        console.error('❌ No se encontró la API key de DeepSeek');
+        return res.status(500).json({ error: 'Falta configuración de API key' });
+      }
+      console.log('🔑 DEEPSEEK_API_KEY en Vercel:', apiKey);
 
       const apiRes = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -92,15 +96,17 @@ Por favor, devuélveme sólo una tabla Markdown con columnas: Criterio, Cumple (
           max_tokens: 1000,
         }),
       });
-      
+
       if (!apiRes.ok) {
-        const errText = await apiRes.text();
-        throw new Error(errText);
+        // Parsear JSON de error y devolver mensaje limpio
+        const errorBody = await apiRes.json();
+        console.error('DeepSeek API error raw:', errorBody);
+        const msg = errorBody?.error?.message || `DeepSeek error ${apiRes.status}`;
+        return res.status(apiRes.status).json({ error: msg });
       }
 
       const { choices }: any = await apiRes.json();
       const resultado: string = choices?.[0]?.message?.content?.trim() || '';
-      // Devolver también el prompt para testeo
       return res.status(200).json({ resultado, prompt });
     } catch (error: any) {
       console.error('Error en POST /api/procesar:', error);
